@@ -1,8 +1,9 @@
 package com.in28minutes.springboot.myfirstwebapp.todo;
 
-
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,13 +29,41 @@ public class TodoController {
     }
 
     @RequestMapping(value = "add-todo", method = RequestMethod.GET)
-    public String showNewTodoPage() {
+    public String showNewTodoPage(ModelMap model) {
+        Todo todo = new Todo(0, (String) model.get("name"), "", LocalDate.now().plusYears(1), false);
+        model.put("todo", todo);
         return "todo";
     }
 
     @RequestMapping(value = "add-todo", method = RequestMethod.POST)
-    public String addNewTodoPage(@RequestParam String description, ModelMap modelMap) {
-        todoService.addTodo((String) modelMap.get("name"), description, LocalDate.now().plusYears(1), false);
+    public String addNewTodoPage(ModelMap modelMap, @Valid Todo todo, BindingResult result) {
+        if (result.hasErrors()) {
+            return "todo";
+        }
+        todoService.addTodo((String) modelMap.get("name"), todo.getDescription(),todo.getTargetDate(), false);
+        return "redirect:list-todos";
+    }
+
+    @RequestMapping("delete-todo")
+    public String deleteTodo(@RequestParam int id) {
+        todoService.deleteById(id);
+        return "redirect:list-todos";
+    }
+
+    @RequestMapping(value = "update-todo", method = RequestMethod.GET)
+    public String showUpdateTodoPage(@RequestParam int id, ModelMap modelMap) {
+        Todo todo = todoService.findById(id);
+        modelMap.addAttribute("todo", todo);
+        return "todo";
+    }
+
+    @RequestMapping(value = "update-todo", method = RequestMethod.POST)
+    public String updateTodo(ModelMap modelMap, @Valid Todo todo, BindingResult result) {
+        if (result.hasErrors()) {
+            return "todo";
+        }
+        todo.setUsername((String) modelMap.get("name"));
+        todoService.updateTodo(todo);
         return "redirect:list-todos";
     }
 }
